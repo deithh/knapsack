@@ -1,0 +1,84 @@
+import random
+from knapsack import Knapsack
+
+class Knapsack:
+    def __init__(self, capacity):
+        self.capaciy = capacity
+        self.taken_capacity = 0
+        self.value = 0
+        self.objects = []
+
+    def __str__(self):
+        ret = []
+        ret.append("Objects list: ")
+        for i, (val, weight) in enumerate(self.objects):
+            ret.append(f"object {i}: value: {val:.2f} | weight: {weight:.2f}")
+        ret.append(f"Total packed: {self.taken_capacity} with value: {self.value}")
+        ret = "\n".join(ret)
+        return ret
+
+def build_knapsack(objects, attempt, knapsack_capacity):
+    knapsack = Knapsack(knapsack_capacity)
+    for include, (val, weight) in zip(attempt, objects):
+        if include == "1":
+            knapsack.objects.append((val, weight))
+            knapsack.taken_capacity+=weight
+            knapsack.value+=val
+    return knapsack
+
+def knapsack_util(objects, capacity):
+    stored = [0]*((1<<len(objects))-1)
+    stored[0] = (0,0,0)
+    for attempt in range(1, (1<<len(objects))-1):
+        flag = 0
+        current = [attempt,0 , 0]
+        attempt = bin(attempt).lstrip('0b')
+        attempt = "0"*(len(objects)-len(attempt)) + attempt
+        for include, (val, weight) in zip(attempt, objects):
+            if include == "1":
+                current[1] += val
+                current[2] += weight
+                if current[2] > capacity:
+                    stored[current[0]] = (current[0],-1, 0)
+                    flag = 1
+                    break
+        if not flag:
+            stored[current[0]] = tuple(current)
+    stored = [(nb, val, weight) for nb, val, weight in stored if val>=0]
+    stored.sort(key = lambda x: x[1], reverse=True)
+    return stored
+        
+
+def knapsack_forced(objects, knapsack_capacity): 
+    best = ([0,0],0,0)
+    A = knapsack_util(objects[:len(objects)//2], knapsack_capacity)
+    B = knapsack_util(objects[len(objects)//2:], knapsack_capacity)
+    for anb, aval, aweigth in A:
+        for bnb, bval, bweigth in B:
+            if aval+bval<=best[1]:
+                break
+            if aweigth+bweigth <= knapsack_capacity:
+                best=([anb, bnb], aval+bval, aweigth+bweigth) 
+                break
+
+    codea =  bin(best[0][0]).lstrip('0b')
+    codea = "0"*(len(objects[:len(objects)//2])-len(codea)) + codea
+    codeb =  bin(best[0][1]).lstrip('0b')
+    codeb = "0"*(len(objects[len(objects)//2:])-len(codeb)) + codeb
+
+    return build_knapsack(objects, codea+codeb, knapsack_capacity)
+
+
+def main():
+    N = 30
+    VAL = (1,10)
+    WEIGHT  = (1,10)
+    CAPACITY = 100
+    objects = [(random.randint(*VAL), random.randint(*WEIGHT)) for i in range(N)]
+    knapsack = knapsack_forced(objects, CAPACITY)
+    print(knapsack)
+
+if __name__ == "__main__":
+    main()
+
+
