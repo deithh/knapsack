@@ -1,9 +1,8 @@
-import random
-from knapsack import Knapsack
+import time
 
 class Knapsack:
     def __init__(self, capacity):
-        self.capaciy = capacity
+        self.capacity = capacity
         self.taken_capacity = 0
         self.value = 0
         self.objects = []
@@ -13,9 +12,14 @@ class Knapsack:
         ret.append("Objects list: ")
         for i, (val, weight) in enumerate(self.objects):
             ret.append(f"object {i}: value: {val:.2f} | weight: {weight:.2f}")
-        ret.append(f"Total packed: {self.taken_capacity} with value: {self.value}")
-        ret = "\n".join(ret)
+        ret.append(f"Total packed (weight): {self.taken_capacity} with value: {self.value}")
+        ret = "\n".join(ret).lstrip("\n")
         return ret
+    
+    def __eq__(self, __value: object) -> bool:
+        if self.value == __value.value:
+            return True
+        return False
 
 def build_knapsack(objects, attempt, knapsack_capacity):
     knapsack = Knapsack(knapsack_capacity)
@@ -27,9 +31,9 @@ def build_knapsack(objects, attempt, knapsack_capacity):
     return knapsack
 
 def knapsack_util(objects, capacity):
-    stored = [0]*((1<<len(objects))-1)
-    stored[0] = (0,0,0)
-    for attempt in range(1, (1<<len(objects))-1):
+    stored = [0]*((1<<len(objects)))
+    stored[0] = (0,0,0) #id sum(val) sum(weight)
+    for attempt in range(1, (1<<len(objects))):
         flag = 0
         current = [attempt,0 , 0]
         attempt = bin(attempt).lstrip('0b')
@@ -49,7 +53,7 @@ def knapsack_util(objects, capacity):
     return stored
         
 
-def knapsack_forced(objects, knapsack_capacity): 
+def knapsack_fastforced(objects, knapsack_capacity): 
     best = ([0,0],0,0)
     A = knapsack_util(objects[:len(objects)//2], knapsack_capacity)
     B = knapsack_util(objects[len(objects)//2:], knapsack_capacity)
@@ -69,14 +73,25 @@ def knapsack_forced(objects, knapsack_capacity):
     return build_knapsack(objects, codea+codeb, knapsack_capacity)
 
 
+def read_objects():
+    objects = []
+    capacity = 0
+    with open("data.txt", 'r') as file:
+        capacity = int(file.readline())
+        file.readline()
+        for i in file.readlines():
+            i = i.split()
+            val = int(i[0])
+            weight = int(i[1])
+            objects.append((val, weight))
+    return objects, capacity
+
 def main():
-    N = 30
-    VAL = (1,10)
-    WEIGHT  = (1,10)
-    CAPACITY = 100
-    objects = [(random.randint(*VAL), random.randint(*WEIGHT)) for i in range(N)]
-    knapsack = knapsack_forced(objects, CAPACITY)
+    objects, capacity = read_objects()
+    now = time.time()
+    knapsack = knapsack_fastforced(objects, capacity)
     print(knapsack)
+    print(f'Time: {time.time()-now}s')
 
 if __name__ == "__main__":
     main()
